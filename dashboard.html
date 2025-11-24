@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPRAN Project Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset & font */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background-color: #ffffffcc;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: #1f2937;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .sidebar a:hover {
+            background-color: #e2e8f0;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        /* Metrics cards */
+        .metrics {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: #ffffffcc;
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            flex: 1;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #4b5563;
+        }
+
+        .card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffffcc;
+            backdrop-filter: blur(8px);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e2e8f0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        tr:hover {
+            background-color: #e2e8f0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>IPRAN Dashboard</h2>
+        <a href="#">Summary</a>
+        <a href="#">Geographic Map</a>
+        <a href="#">Status Tracking</a>
+    </div>
+    <div class="main-content">
+        <h1>📊 IPRAN Project Dashboard</h1>
+
+        <!-- Metrics -->
+        <div class="metrics">
+            <div class="card">
+                <h3>Total Site</h3>
+                <p>241</p>
+            </div>
+            <div class="card">
+                <h3>Survey Done</h3>
+                <p>180</p>
+            </div>
+            <div class="card">
+                <h3>Migration Done</h3>
+                <p>150</p>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <h2>📋 Data Tracking Full</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Site Name</th>
+                    <th>Region</th>
+                    <th>Scope Update</th>
+                    <th>Survey Actual</th>
+                    <th>Migration Actual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Site A</td>
+                    <td>Central Java</td>
+                    <td>Update 1</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>Site B</td>
+                    <td>Central Java</td>
+                    <td>Update 2</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>Site C</td>
+                    <td>Central Java</td>
+                    <td>Update 1</td>
+                    <td>Yes</td>
+                    <td>No</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
