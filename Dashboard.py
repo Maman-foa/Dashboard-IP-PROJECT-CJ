@@ -75,8 +75,29 @@ with col2:
     """, unsafe_allow_html=True)
 
 # ====== DATA ======
-months = ['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb']
-revenues = [22000,20000,25000,18000,21000,15000,18200,14678,8000,7500,9000,6000]
+file_path = 'TOPOLOGY SEPTEMBER_FOA - Update_2025.xlsb'
+            sheet_name = 'FOA Active'
+            df = pd.read_excel(file_path, sheet_name=sheet_name, engine="pyxlsb")
+            df.columns = df.columns.str.strip()
+
+            col_site = get_col(df, "New Site ID")
+            col_dest = get_col(df, "New Destination", alt="New Destenation")
+            col_fiber = get_col(df, "Fiber Type")
+            col_site_name = get_col(df, "Site Name")
+            col_host = get_col(df, "Host Name", alt="Hostname")
+            col_flp = get_col(df, "FLP Vendor")
+            col_flp_len = get_col(df, "FLP LENGTH")
+            col_syskey = get_col(df, "System Key")
+            col_dest_name = get_col(df, "Destination Name")
+            col_ring = get_col(df, "Ring ID")
+            col_member_ring = get_col(df, "Member Ring")
+
+            required_cols = [col_site, col_dest, col_fiber, col_site_name, col_host, col_flp,
+                             col_flp_len, col_syskey, col_dest_name, col_ring, col_member_ring]
+            missing_cols = [c for c in required_cols if c is None]
+            if missing_cols:
+                st.error(f"Kolom berikut tidak ditemukan di file Excel: {missing_cols}")
+                st.stop()
 
 # ====== PLOTLY CHART ======
 fig = go.Figure()
