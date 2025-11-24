@@ -47,6 +47,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# =========================
+# BACKGROUND ELEGAN
+# =========================
+st.markdown(
+    """
+    <style>
+    /* Background gradasi */
+    .stApp {
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+        color: #0a0a0a;
+    }
+
+    /* Styling container */
+    .css-18e3th9 {  /* class utama container Streamlit */
+        background-color: rgba(255, 255, 255, 0.85);
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    /* Judul & subjudul */
+    .stTitle, .stMarkdown h2, .stMarkdown h3 {
+        color: #1f2937;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("📊 IPRAN Project Dashboard")
 st.markdown("---")
 
@@ -68,7 +97,7 @@ else:
 selected_scope_update = st.sidebar.multiselect(
     "Filter Scope Update (bisa pilih lebih dari satu)",
     options=scope_update_options,
-    default=scope_update_options  # default pilih semua
+    default=scope_update_options
 )
 
 # Filter dataframe sesuai Scope Update
