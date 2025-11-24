@@ -38,8 +38,6 @@ def milestone_completed(df):
         status[m] = df[col].notna().sum() if col in df.columns else 0
     return status
 
-milestone_status = milestone_completed(df)
-
 # =========================
 # STREAMLIT UI
 # =========================
@@ -60,6 +58,28 @@ dashboard_type = st.sidebar.radio(
 )
 
 # =========================
+# FILTER REGION & SCOPE
+# =========================
+# Pastikan kolom Scope ada di df
+scope_options = ["All"] + sorted(df["Scope"].unique().tolist()) if "Scope" in df.columns else ["All"]
+region_options = ["All"] + sorted(df["Region"].unique().tolist()) if "Region" in df.columns else ["All"]
+
+selected_region = st.sidebar.selectbox("Filter Region", region_options)
+selected_scope = st.sidebar.selectbox("Filter Scope", scope_options)
+
+# Filter dataframe sesuai pilihan
+df_filtered = df.copy()
+if selected_region != "All":
+    df_filtered = df_filtered[df_filtered["Region"] == selected_region]
+if selected_scope != "All":
+    df_filtered = df_filtered[df_filtered["Scope"] == selected_scope]
+
+# =========================
+# MILESTONE STATUS
+# =========================
+milestone_status = milestone_completed(df_filtered)
+
+# =========================
 # SUMMARY DASHBOARD
 # =========================
 if dashboard_type == "Summary":
@@ -67,9 +87,9 @@ if dashboard_type == "Summary":
 
     # Metrics
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Site", len(df))
-    col2.metric("Survey Done", df["Survey Actual"].notna().sum())
-    col3.metric("Migration Done", df["Migration Actual"].notna().sum())
+    col1.metric("Total Site", len(df_filtered))
+    col2.metric("Survey Done", df_filtered["Survey Actual"].notna().sum())
+    col3.metric("Migration Done", df_filtered["Migration Actual"].notna().sum())
 
     st.markdown("### Milestone Completion Chart")
     ms_df = pd.DataFrame({
@@ -96,7 +116,7 @@ if dashboard_type == "Summary":
 elif dashboard_type == "Geographic Map":
     st.subheader("🗺 Site Location Map")
 
-    df_map = df.dropna(subset=["Lat", "Long"])
+    df_map = df_filtered.dropna(subset=["Lat", "Long"])
     st.map(df_map.rename(columns={"Lat": "lat", "Long": "lon"}))
 
 # =========================
@@ -104,8 +124,4 @@ elif dashboard_type == "Geographic Map":
 # =========================
 elif dashboard_type == "Status Tracking":
     st.subheader("📋 Data Tracking Full")
-
-    region = st.sidebar.selectbox("Filter Region", ["All"] + sorted(df["Region"].unique().tolist()))
-    df_filtered = df if region == "All" else df[df["Region"] == region]
-
     st.dataframe(df_filtered, use_container_width=True)
