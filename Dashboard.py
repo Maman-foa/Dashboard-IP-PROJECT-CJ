@@ -50,29 +50,28 @@ st.set_page_config(
 st.title("📊 IPRAN Project Dashboard")
 st.markdown("---")
 
-# Sidebar untuk navigasi dan filter
+# =========================
+# SIDEBAR FILTER
+# =========================
 st.sidebar.header("Dashboard Options")
 dashboard_type = st.sidebar.radio(
     "Pilih Jenis Dashboard",
     ["Summary", "Geographic Map", "Status Tracking"]
 )
 
-# =========================
-# FILTER REGION & SCOPE
-# =========================
-# Pastikan kolom Scope ada di df
-scope_options = ["All"] + sorted(df["Scope"].unique().tolist()) if "Scope" in df.columns else ["All"]
-region_options = ["All"] + sorted(df["Region"].unique().tolist()) if "Region" in df.columns else ["All"]
+# Scope & Region options (paksa semua jadi string agar aman)
+scope_options = ["All"] + sorted(df["Scope"].astype(str).unique().tolist())
+region_options = ["All"] + sorted(df["Region"].astype(str).unique().tolist())
 
-selected_region = st.sidebar.selectbox("Filter Region", region_options)
 selected_scope = st.sidebar.selectbox("Filter Scope", scope_options)
+selected_region = st.sidebar.selectbox("Filter Region", region_options)
 
-# Filter dataframe sesuai pilihan
+# Filter dataframe
 df_filtered = df.copy()
-if selected_region != "All":
-    df_filtered = df_filtered[df_filtered["Region"] == selected_region]
 if selected_scope != "All":
-    df_filtered = df_filtered[df_filtered["Scope"] == selected_scope]
+    df_filtered = df_filtered[df_filtered["Scope"].astype(str) == selected_scope]
+if selected_region != "All":
+    df_filtered = df_filtered[df_filtered["Region"].astype(str) == selected_region]
 
 # =========================
 # MILESTONE STATUS
@@ -80,7 +79,7 @@ if selected_scope != "All":
 milestone_status = milestone_completed(df_filtered)
 
 # =========================
-# SUMMARY DASHBOARD
+# DASHBOARD SUMMARY
 # =========================
 if dashboard_type == "Summary":
     st.subheader("📈 Milestone Progress Summary")
@@ -107,11 +106,14 @@ if dashboard_type == "Summary":
         color="Completed",
         color_continuous_scale="Viridis"
     )
-    fig.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(
+        yaxis={'categoryorder':'total ascending'},
+        plot_bgcolor="rgba(0,0,0,0)"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 # =========================
-# MAP DASHBOARD
+# DASHBOARD MAP
 # =========================
 elif dashboard_type == "Geographic Map":
     st.subheader("🗺 Site Location Map")
@@ -120,7 +122,7 @@ elif dashboard_type == "Geographic Map":
     st.map(df_map.rename(columns={"Lat": "lat", "Long": "lon"}))
 
 # =========================
-# STATUS TRACKING DASHBOARD
+# DASHBOARD STATUS TRACKING
 # =========================
 elif dashboard_type == "Status Tracking":
     st.subheader("📋 Data Tracking Full")
