@@ -30,7 +30,7 @@ MILESTONE_MAP = {
 }
 
 # =========================
-# BUAT KOLOM STATUS MILESTONE SECARA OTOMATIS
+# FUNCTION: MILESTONE STATUS
 # =========================
 def milestone_completed(df):
     status = {}
@@ -39,7 +39,7 @@ def milestone_completed(df):
     return status
 
 # =========================
-# STREAMLIT UI
+# STREAMLIT PAGE CONFIG
 # =========================
 st.set_page_config(
     page_title="📊 IPRAN Project Dashboard",
@@ -48,36 +48,29 @@ st.set_page_config(
 )
 
 # =========================
-# BACKGROUND ELEGAN
+# CUSTOM CSS BACKGROUND & CONTAINER
 # =========================
-st.markdown(
-    """
-    <style>
-    /* Background gradasi */
-    .stApp {
-        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-        color: #0a0a0a;
-    }
+st.markdown("""
+<style>
+/* Background gradasi elegan */
+.stApp {
+    background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+}
 
-    /* Styling container */
-    .css-18e3th9 {  /* class utama container Streamlit */
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
+/* Custom container untuk widget */
+.custom-container {
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
 
-    /* Judul & subjudul */
-    .stTitle, .stMarkdown h2, .stMarkdown h3 {
-        color: #1f2937;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-st.title("📊 IPRAN Project Dashboard")
-st.markdown("---")
+/* Judul & subjudul */
+.stTitle, .stMarkdown h2, .stMarkdown h3 {
+    color: #1f2937;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================
 # SIDEBAR FILTER
@@ -88,7 +81,7 @@ dashboard_type = st.sidebar.radio(
     ["Summary", "Geographic Map", "Status Tracking"]
 )
 
-# Filter Scope Update multi-select
+# Multi-select Scope Update
 if "Scope Update" in df.columns:
     scope_update_options = sorted(df["Scope Update"].astype(str).unique().tolist())
 else:
@@ -111,12 +104,19 @@ if selected_scope_update:
 milestone_status = milestone_completed(df_filtered)
 
 # =========================
+# DASHBOARD HEADER
+# =========================
+st.markdown('<div class="custom-container">', unsafe_allow_html=True)
+st.title("📊 IPRAN Project Dashboard")
+st.markdown("---")
+
+# =========================
 # DASHBOARD SUMMARY
 # =========================
 if dashboard_type == "Summary":
     st.subheader("📈 Milestone Progress Summary")
 
-    # Metrics
+    # Metrics cards
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Site", len(df_filtered))
     col2.metric("Survey Done", df_filtered["Survey Actual"].notna().sum())
@@ -149,7 +149,6 @@ if dashboard_type == "Summary":
 # =========================
 elif dashboard_type == "Geographic Map":
     st.subheader("🗺 Site Location Map")
-
     df_map = df_filtered.dropna(subset=["Lat", "Long"])
     st.map(df_map.rename(columns={"Lat": "lat", "Long": "lon"}))
 
@@ -159,3 +158,5 @@ elif dashboard_type == "Geographic Map":
 elif dashboard_type == "Status Tracking":
     st.subheader("📋 Data Tracking Full")
     st.dataframe(df_filtered, use_container_width=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
