@@ -5,7 +5,7 @@ import plotly.express as px
 # =========================
 # LOAD DATA
 # =========================
-FILE_PATH = "/mnt/data/Database IP Project Central Java Area 24112025.xlsx"
+FILE_PATH = "Database IP Project Central Java Area 24112025.xlsx"
 df = pd.read_excel(FILE_PATH, sheet_name="IPRAN")
 
 # =========================
