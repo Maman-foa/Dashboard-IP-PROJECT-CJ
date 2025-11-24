@@ -2,15 +2,45 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# =========================
-# LOAD DATA
-# =========================
-FILE_PATH = "Database IP Project Central Java Area 24112025.xlsx"
-df = pd.read_excel(FILE_PATH, sheet_name="IPRAN")
+# =============================
+# STREAMLIT CONFIG
+# =============================
+st.set_page_config(page_title="IPRAN Dashboard", layout="wide")
 
-# =========================
-# MILESTONE MAPPING OTOMATIS
-# =========================
+st.title("📊 IPRAN Project Dashboard")
+
+# =============================
+# FILE UPLOADER
+# =============================
+uploaded = st.file_uploader(
+    "Upload File XLSX Database IPRAN",
+    type=["xlsx"],
+    help="Upload file: Database IP Project Central Java Area 24112025.xlsx"
+)
+
+if uploaded is None:
+    st.warning("Silakan upload file XLSX terlebih dahulu.")
+    st.stop()
+
+# =============================
+# LOAD SHEET IPRAN
+# =============================
+try:
+    df = pd.read_excel(uploaded, sheet_name="IPRAN")
+except Exception as e:
+    st.error("❌ Gagal membaca sheet 'IPRAN'. Pastikan sheet tersebut ada di file.")
+    st.stop()
+
+# Normalisasi kolom
+df.columns = df.columns.str.strip()
+
+# Pastikan kolom numerik tetap aman
+if "Region" in df.columns:
+    df["Region"] = df["Region"].astype(str)
+
+# =============================
+# MILESTONE MAP OTOMATIS
+# =============================
 MILESTONE_MAP = {
     "00. Migration Done": "Migration Actual",
     "01. Integration Done": "Integration Actual",
@@ -29,35 +59,33 @@ MILESTONE_MAP = {
     "10. PO Batch 1 Total": "Batch"
 }
 
-# =========================
-# BUAT KOLOM STATUS MILESTONE SECARA OTOMATIS
-# =========================
+# =============================
+# HITUNG STATUS MILESTONE
+# =============================
 def milestone_completed(df):
-    status = {}
-    for m, col in MILESTONE_MAP.items():
+    result = {}
+    for milestone, col in MILESTONE_MAP.items():
         if col not in df.columns:
-            status[m] = 0
+            result[milestone] = 0
         else:
-            status[m] = df[col].notna().sum()
-    return status
+            result[milestone] = df[col].notna().sum()
+    return result
 
 milestone_status = milestone_completed(df)
 
-# =========================
-# STREAMLIT UI
-# =========================
-st.title("📊 IPRAN Project Dashboard")
-
+# =============================
+# JENIS DASHBOARD
+# =============================
 dashboard_type = st.selectbox(
     "Pilih Jenis Dashboard",
     ["Summary", "Geographic Map", "Status Tracking"]
 )
 
-st.subheader("Milestone Progress Summary")
+# =============================
+# SUMMARY PROGRESS (BAR CHART)
+# =============================
+st.subheader("📈 Milestone Progress Summary")
 
-# =========================
-# CHART
-# =========================
 ms_df = pd.DataFrame({
     "Milestone": list(milestone_status.keys()),
     "Completed": list(milestone_status.values())
@@ -67,35 +95,46 @@ fig = px.bar(
     ms_df,
     x="Milestone",
     y="Completed",
+    text="Completed",
     title="Progress Semua Milestone",
-    text="Completed"
+    color="Completed"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-# =========================
+# =============================
 # DASHBOARD DETAIL
-# =========================
+# =============================
 if dashboard_type == "Geographic Map":
     st.subheader("🗺 Site Location Map")
 
-    df_map = df.dropna(subset=["Lat", "Long"])
-
-    st.map(df_map.rename(columns={"Lat": "lat", "Long": "lon"}))
+    if {"Lat", "Long"}.issubset(df.columns):
+        df_map = df.dropna(subset=["Lat", "Long"])
+        df_map = df_map.rename(columns={"Lat": "lat", "Long": "lon"})
+        st.map(df_map)
+    else:
+        st.error("Kolom Lat / Long tidak ditemukan.")
 
 elif dashboard_type == "Status Tracking":
-    st.subheader("📋 Data Tracking Full")
+    st.subheader("📋 Full Tracking Data")
 
-    region = st.selectbox("Filter Region", ["All"] + sorted(df["Region"].unique().tolist()))
+    if "Region" not in df.columns:
+        st.error("Kolom 'Region' tidak ditemukan di file.")
+        st.stop()
 
-    df_filtered = df if region == "All" else df[df["Region"] == region]
+    region_list = ["All"] + sorted(df["Region"].astype(str).unique().tolist())
 
-    st.dataframe(df_filtered)
+    region = st.selectbox("Filter Region", region_list)
+
+    df_filtered = df if region == "All" else df[df["Region"].astype(str) == region]
+
+    st.dataframe(df_filtered, use_container_width=True)
 
 else:
-    st.subheader("Summary Angka")
+    st.subheader("📌 Summary Angka")
 
     col1, col2, col3 = st.columns(3)
+
     col1.metric("Total Site", len(df))
-    col2.metric("Survey Done", df["Survey Actual"].notna().sum())
-    col3.metric("Migration Done", df["Migration Actual"].notna().sum())
+    col2.metric("Survey Done", df["Survey Actual"].notna().sum() if "Survey Actual" in df.columns else 0)
+    col3.metric("Migration Done", df["Migration Actual"].notna().sum() if "Migration Actual" in df.columns else 0)
