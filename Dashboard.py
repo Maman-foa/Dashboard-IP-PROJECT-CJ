@@ -59,16 +59,22 @@ dashboard_type = st.sidebar.radio(
     ["Summary", "Geographic Map", "Status Tracking"]
 )
 
-# Filter Scope multi-select
-scope_options = sorted(df["Scope"].astype(str).unique().tolist())
-selected_scope = st.sidebar.multiselect(
-    "Filter Scope (bisa pilih lebih dari satu)",
-    options=scope_options,
-    default=scope_options  # default pilih semua
+# Filter Scope Update multi-select
+if "Scope Update" in df.columns:
+    scope_update_options = sorted(df["Scope Update"].astype(str).unique().tolist())
+else:
+    scope_update_options = []
+
+selected_scope_update = st.sidebar.multiselect(
+    "Filter Scope Update (bisa pilih lebih dari satu)",
+    options=scope_update_options,
+    default=scope_update_options  # default pilih semua
 )
 
-# Filter dataframe sesuai Scope
-df_filtered = df[df["Scope"].astype(str).isin(selected_scope)]
+# Filter dataframe sesuai Scope Update
+df_filtered = df.copy()
+if selected_scope_update:
+    df_filtered = df_filtered[df_filtered["Scope Update"].astype(str).isin(selected_scope_update)]
 
 # =========================
 # MILESTONE STATUS
