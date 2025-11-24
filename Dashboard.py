@@ -35,10 +35,7 @@ MILESTONE_MAP = {
 def milestone_completed(df):
     status = {}
     for m, col in MILESTONE_MAP.items():
-        if col not in df.columns:
-            status[m] = 0
-        else:
-            status[m] = df[col].notna().sum()
+        status[m] = df[col].notna().sum() if col in df.columns else 0
     return status
 
 milestone_status = milestone_completed(df)
@@ -46,56 +43,69 @@ milestone_status = milestone_completed(df)
 # =========================
 # STREAMLIT UI
 # =========================
-st.title("📊 IPRAN Project Dashboard")
+st.set_page_config(
+    page_title="📊 IPRAN Project Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-dashboard_type = st.selectbox(
+st.title("📊 IPRAN Project Dashboard")
+st.markdown("---")
+
+# Sidebar untuk navigasi dan filter
+st.sidebar.header("Dashboard Options")
+dashboard_type = st.sidebar.radio(
     "Pilih Jenis Dashboard",
     ["Summary", "Geographic Map", "Status Tracking"]
 )
 
-st.subheader("Milestone Progress Summary")
-
 # =========================
-# CHART
+# SUMMARY DASHBOARD
 # =========================
-ms_df = pd.DataFrame({
-    "Milestone": list(milestone_status.keys()),
-    "Completed": list(milestone_status.values())
-})
+if dashboard_type == "Summary":
+    st.subheader("📈 Milestone Progress Summary")
 
-fig = px.bar(
-    ms_df,
-    x="Milestone",
-    y="Completed",
-    title="Progress Semua Milestone",
-    text="Completed"
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# =========================
-# DASHBOARD DETAIL
-# =========================
-if dashboard_type == "Geographic Map":
-    st.subheader("🗺 Site Location Map")
-
-    df_map = df.dropna(subset=["Lat", "Long"])
-
-    st.map(df_map.rename(columns={"Lat": "lat", "Long": "lon"}))
-
-elif dashboard_type == "Status Tracking":
-    st.subheader("📋 Data Tracking Full")
-
-    region = st.selectbox("Filter Region", ["All"] + sorted(df["Region"].unique().tolist()))
-
-    df_filtered = df if region == "All" else df[df["Region"] == region]
-
-    st.dataframe(df_filtered)
-
-else:
-    st.subheader("Summary Angka")
-
+    # Metrics
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Site", len(df))
     col2.metric("Survey Done", df["Survey Actual"].notna().sum())
     col3.metric("Migration Done", df["Migration Actual"].notna().sum())
+
+    st.markdown("### Milestone Completion Chart")
+    ms_df = pd.DataFrame({
+        "Milestone": list(milestone_status.keys()),
+        "Completed": list(milestone_status.values())
+    })
+
+    fig = px.bar(
+        ms_df.sort_values("Completed", ascending=True),
+        x="Completed",
+        y="Milestone",
+        orientation="h",
+        text="Completed",
+        title="Progress Semua Milestone",
+        color="Completed",
+        color_continuous_scale="Viridis"
+    )
+    fig.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig, use_container_width=True)
+
+# =========================
+# MAP DASHBOARD
+# =========================
+elif dashboard_type == "Geographic Map":
+    st.subheader("🗺 Site Location Map")
+
+    df_map = df.dropna(subset=["Lat", "Long"])
+    st.map(df_map.rename(columns={"Lat": "lat", "Long": "lon"}))
+
+# =========================
+# STATUS TRACKING DASHBOARD
+# =========================
+elif dashboard_type == "Status Tracking":
+    st.subheader("📋 Data Tracking Full")
+
+    region = st.sidebar.selectbox("Filter Region", ["All"] + sorted(df["Region"].unique().tolist()))
+    df_filtered = df if region == "All" else df[df["Region"] == region]
+
+    st.dataframe(df_filtered, use_container_width=True)
