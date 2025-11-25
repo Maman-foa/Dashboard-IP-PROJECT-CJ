@@ -1,162 +1,131 @@
 import streamlit as st
-import plotly.express as px
 import pandas as pd
-import warnings
-warnings.filterwarnings('ignore')
-
-st.set_page_config(page_title="Superstore Dashboard", page_icon=":bar_chart:", layout="wide")
-
-st.title("📊 SuperStore / Adidas EDA Dashboard")
+import datetime
+from PIL import Image
+import plotly.express as px
+import plotly.graph_objects as go
+print("Hello Learners")
+# reading the data from excel file
+df = pd.read_excel("Adidas.xlsx")
+st.set_page_config(layout="wide")
 st.markdown('<style>div.block-container{padding-top:1rem;}</style>', unsafe_allow_html=True)
+image = Image.open('adidas-logo.jpg')
 
-# ==============================================
-# FILE UPLOADER
-# ==============================================
-uploaded = st.file_uploader(":file_folder: Upload CSV / Excel", type=["csv","txt","xlsx","xls"])
-
-if uploaded is not None:
-    st.success(f"File uploaded: **{uploaded.name}**")
-
-    if uploaded.name.endswith((".csv", ".txt")):
-        df = pd.read_csv(uploaded, encoding="ISO-8859-1")
-    else:
-        df = pd.read_excel(uploaded)
-else:
-    # DEFAULT FILE — sesuaikan dengan file Anda
-    DEFAULT_FILE = "Adidas.xlsx"   # wajib ada dalam folder Streamlit Cloud
-    df = pd.read_excel(DEFAULT_FILE)
-
-# ==============================================
-# Tampilkan kolom untuk CEK struktur dataset
-# ==============================================
-st.write("### 🧩 Columns Detected in Dataset:")
-st.write(df.columns.tolist())
-
-# ==============================================
-# CEK apakah kolom wajib ada
-# ==============================================
-required_cols = ["Order Date", "Region", "State", "City",
-                 "Category", "Sub-Category", "Segment",
-                 "Sales", "Profit", "Quantity"]
-
-missing = [col for col in required_cols if col not in df.columns]
-
-if missing:
-    st.error(f"❌ Dataset Anda tidak memiliki kolom berikut:\n\n{missing}\n\n"
-             "Silakan sesuaikan nama kolom atau beri tahu saya untuk mapping otomatis.")
-    st.stop()
-
-# ==============================================
-# KONVERSI TANGGAL
-# ==============================================
-df["Order Date"] = pd.to_datetime(df["Order Date"])
-
-# ==============================================
-# FILTER DATE
-# ==============================================
-col1, col2 = st.columns((2))
-
-startDate = df["Order Date"].min()
-endDate   = df["Order Date"].max()
-
+col1, col2 = st.columns([0.1,0.9])
 with col1:
-    date1 = st.date_input("Start Date", startDate)
+    st.image(image,width=100)
 
+html_title = """
+    <style>
+    .title-test {
+    font-weight:bold;
+    padding:5px;
+    border-radius:6px;
+    }
+    </style>
+    <center><h1 class="title-test">Adidas Interactive Sales Dashboard</h1></center>"""
 with col2:
-    date2 = st.date_input("End Date", endDate)
+    st.markdown(html_title, unsafe_allow_html=True)
 
-df = df[(df["Order Date"] >= pd.to_datetime(date1)) &
-        (df["Order Date"] <= pd.to_datetime(date2))]
+col3, col4, col5 = st.columns([0.1,0.45,0.45])
+with col3:
+    box_date = str(datetime.datetime.now().strftime("%d %B %Y"))
+    st.write(f"Last updated by:  \n {box_date}")
 
-# ==============================================
-# SIDEBAR FILTER
-# ==============================================
-st.sidebar.header("🧭 Filters")
+with col4:
+    fig = px.bar(df, x = "Retailer", y = "TotalSales", labels={"TotalSales" : "Total Sales {$}"},
+                 title = "Total Sales by Retailer", hover_data=["TotalSales"],
+                 template="gridon",height=500)
+    st.plotly_chart(fig,use_container_width=True)
 
-region = st.sidebar.multiselect("Region", df["Region"].unique())
-state  = st.sidebar.multiselect("State", df["State"].unique())
-city   = st.sidebar.multiselect("City", df["City"].unique())
+_, view1, dwn1, view2, dwn2 = st.columns([0.15,0.20,0.20,0.20,0.20])
+with view1:
+    expander = st.expander("Retailer wise Sales")
+    data = df[["Retailer","TotalSales"]].groupby(by="Retailer")["TotalSales"].sum()
+    expander.write(data)
+with dwn1:
+    st.download_button("Get Data", data = data.to_csv().encode("utf-8"),
+                       file_name="RetailerSales.csv", mime="text/csv")
 
-filtered_df = df.copy()
+df["Month_Year"] = df["InvoiceDate"].dt.strftime("%b'%y")
+result = df.groupby(by = df["Month_Year"])["TotalSales"].sum().reset_index()
 
-if region:
-    filtered_df = filtered_df[filtered_df["Region"].isin(region)]
+with col5:
+    fig1 = px.line(result, x = "Month_Year", y = "TotalSales", title="Total Sales Over Time",
+                   template="gridon")
+    st.plotly_chart(fig1,use_container_width=True)
 
-if state:
-    filtered_df = filtered_df[filtered_df["State"].isin(state)]
+with view2:
+    expander = st.expander("Monthly Sales")
+    data = result
+    expander.write(data)
+with dwn2:
+    st.download_button("Get Data", data = result.to_csv().encode("utf-8"),
+                       file_name="Monthly Sales.csv", mime="text/csv")
+    
+st.divider()
 
-if city:
-    filtered_df = filtered_df[filtered_df["City"].isin(city)]
+result1 = df.groupby(by="State")[["TotalSales","UnitsSold"]].sum().reset_index()
 
-# ==============================================
-# CATEGORY SALES BAR CHART
-# ==============================================
-category_df = filtered_df.groupby("Category")["Sales"].sum().reset_index()
-
-c1, c2 = st.columns(2)
-
-with c1:
-    st.subheader("Category wise Sales")
-    fig = px.bar(
-        category_df, x="Category", y="Sales",
-        text=[f"${x:,.2f}" for x in category_df["Sales"]],
-        template="seaborn"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-with c2:
-    st.subheader("Region wise Sales")
-    fig = px.pie(filtered_df, values="Sales", names="Region", hole=0.5)
-    st.plotly_chart(fig, use_container_width=True)
-
-# ==============================================
-# TIME SERIES
-# ==============================================
-filtered_df["month_year"] = filtered_df["Order Date"].dt.to_period("M")
-linechart = filtered_df.groupby(
-    filtered_df["month_year"].dt.strftime("%Y-%b")
-)["Sales"].sum().reset_index()
-
-st.subheader("Time Series Sales Trend")
-fig2 = px.line(linechart, x="month_year", y="Sales", markers=True)
-st.plotly_chart(fig2, use_container_width=True)
-
-# ==============================================
-# TREEMAP
-# ==============================================
-st.subheader("Hierarchical Sales (Treemap)")
-fig3 = px.treemap(
-    filtered_df,
-    path=["Region", "Category", "Sub-Category"],
-    values="Sales",
-    color="Sub-Category"
+# add the units sold as a line chart on a secondary y-axis
+fig3 = go.Figure()
+fig3.add_trace(go.Bar(x = result1["State"], y = result1["TotalSales"], name = "Total Sales"))
+fig3.add_trace(go.Scatter(x=result1["State"], y = result1["UnitsSold"], mode = "lines",
+                          name ="Units Sold", yaxis="y2"))
+fig3.update_layout(
+    title = "Total Sales and Units Sold by State",
+    xaxis = dict(title="State"),
+    yaxis = dict(title="Total Sales", showgrid = False),
+    yaxis2 = dict(title="Units Sold", overlaying = "y", side = "right"),
+    template = "gridon",
+    legend = dict(x=1,y=1.1)
 )
-st.plotly_chart(fig3, use_container_width=True)
+_, col6 = st.columns([0.1,1])
+with col6:
+    st.plotly_chart(fig3,use_container_width=True)
 
-# ==============================================
-# SEGMENT PIE & CATEGORY PIE
-# ==============================================
-s1, s2 = st.columns(2)
+_, view3, dwn3 = st.columns([0.5,0.45,0.45])
+with view3:
+    expander = st.expander("View Data for Sales by Units Sold")
+    expander.write(result1)
+with dwn3:
+    st.download_button("Get Data", data = result1.to_csv().encode("utf-8"), 
+                       file_name = "Sales_by_UnitsSold.csv", mime="text/csv")
+st.divider()
 
-with s1:
-    st.subheader("Segment wise Sales")
-    fig = px.pie(filtered_df, values="Sales", names="Segment")
-    st.plotly_chart(fig, use_container_width=True)
+_, col7 = st.columns([0.1,1])
+treemap = df[["Region","City","TotalSales"]].groupby(by = ["Region","City"])["TotalSales"].sum().reset_index()
 
-with s2:
-    st.subheader("Category wise Sales")
-    fig = px.pie(filtered_df, values="Sales", names="Category")
-    st.plotly_chart(fig, use_container_width=True)
+def format_sales(value):
+    if value >= 0:
+        return '{:.2f} Lakh'.format(value / 1_000_00)
 
-# ==============================================
-# SCATTER PLOT
-# ==============================================
-st.subheader("Relationship: Sales vs Profit")
-fig = px.scatter(filtered_df, x="Sales", y="Profit", size="Quantity")
-st.plotly_chart(fig, use_container_width=True)
+treemap["TotalSales (Formatted)"] = treemap["TotalSales"].apply(format_sales)
 
-# ==============================================
-# DOWNLOAD ORIGINAL DATA
-# ==============================================
-csv = df.to_csv(index=False).encode("utf-8")
-st.download_button("Download Dataset", csv, "Dataset.csv", "text/csv")
+fig4 = px.treemap(treemap, path = ["Region","City"], values = "TotalSales",
+                  hover_name = "TotalSales (Formatted)",
+                  hover_data = ["TotalSales (Formatted)"],
+                  color = "City", height = 700, width = 600)
+fig4.update_traces(textinfo="label+value")
+
+with col7:
+    st.subheader(":point_right: Total Sales by Region and City in Treemap")
+    st.plotly_chart(fig4,use_container_width=True)
+
+_, view4, dwn4 = st.columns([0.5,0.45,0.45])
+with view4:
+    result2 = df[["Region","City","TotalSales"]].groupby(by=["Region","City"])["TotalSales"].sum()
+    expander = st.expander("View data for Total Sales by Region and City")
+    expander.write(result2)
+with dwn4:
+    st.download_button("Get Data", data = result2.to_csv().encode("utf-8"),
+                                        file_name="Sales_by_Region.csv", mime="text.csv")
+
+_,view5, dwn5 = st.columns([0.5,0.45,0.45])
+with view5:
+    expander = st.expander("View Sales Raw Data")
+    expander.write(df)
+with dwn5:
+    st.download_button("Get Raw Data", data = df.to_csv().encode("utf-8"),
+                       file_name = "SalesRawData.csv", mime="text/csv")
+st.divider()
