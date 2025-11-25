@@ -1,6 +1,0 @@
-[theme]
-primaryColor = "#4F46E5"          # warna utama (button, slider)
-backgroundColor = "#f0f4f8"       # warna background aplikasi
-secondaryBackgroundColor = "#ffffff"  # container widget
-textColor = "#1f2937"             # warna teks
-font = "inter"                     # font elegan, bisa: "sans serif", "serif", "monospace", "inter"
