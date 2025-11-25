@@ -32,7 +32,7 @@ if uploaded_file is not None:
 
 else:
     # Fallback: gunakan file default di repo
-    DEFAULT_FILE = "Database IP Project Central Java Area 24112025.xlsx"
+    DEFAULT_FILE = "Adidas.xlsx"
     st.sidebar.warning(f"Using default file: {DEFAULT_FILE}")
     df = pd.read_excel(DEFAULT_FILE)
 
