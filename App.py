@@ -67,7 +67,7 @@ with col2:
     st.markdown("<h1>IPRAN Interactive Dashboard</h1>", unsafe_allow_html=True)
     st.write("Last Update:", pd.Timestamp.today().strftime("%d %B %Y"))
 
-st.markdown("### **A. Summary / Count**")
+st.markdown("### **SOW SCOPE**")
 
 # =============================
 # SUMMARY COUNT — BASED ON Scope Update
