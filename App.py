@@ -70,20 +70,21 @@ with col2:
 st.markdown("### **A. Summary / Count**")
 
 # =============================
-# SUMMARY COUNT
+# SUMMARY COUNT — BASED ON Scope Update
 # =============================
 scope_list = ["Swap", "New", "Modernize", "Service Migration"]
 
 col_a, col_b, col_c, col_d = st.columns(4)
 for (col, sc) in zip([col_a, col_b, col_c, col_d], scope_list):
     with col:
-        count = df[df["Scope"] == sc].shape[0]
+        count = df[df["Scope Update"] == sc].shape[0]  # <-- Ubah kolom di sini
         st.markdown(f"""
         <div class="card">
             <h3 style='color:#0055aa'>{sc}</h3>
             <h2>{count}</h2>
         </div>
         """, unsafe_allow_html=True)
+
 
 # =============================
 # SECTION B — GRAFIK
