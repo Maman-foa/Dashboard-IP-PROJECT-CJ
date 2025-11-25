@@ -1,165 +1,133 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from PIL import Image
 
-st.set_page_config(page_title="IPRAN Dashboard", layout="wide")
+# =========================================================
+# LOAD DATA
+# =========================================================
+FILE_PATH = "Database IP Project Central Java Area 24112025.xlsx"
 
-# =============================
-# CUSTOM CSS — STYLE ADIDAS
-# =============================
+@st.cache_data
+def load_data():
+    df = pd.read_excel(FILE_PATH, sheet_name="IPRAN")
+    return df
+
+df = load_data()
+
+# =========================================================
+# MILESTONE OTOMATIS (berdasarkan kolom Migration Actual)
+# =========================================================
+MILESTONE_MAP = {
+    "00 Not Started": ["", None, "NA", "N/A"],
+    "10 On Progress": ["IN PROGRESS", "ONGOING"],
+    "20 Done & Verified": ["DONE", "VERIFIED", "COMPLETED"]
+}
+
+def map_milestone(value):
+    if pd.isna(value) or str(value).strip() in ["", "-", "None"]:
+        return "00 Not Started"
+    val = str(value).upper().strip()
+
+    for milestone, keys in MILESTONE_MAP.items():
+        for key in keys:
+            if key and key in val:
+                return milestone
+
+    # Jika ada tanggal → otomatis Done
+    try:
+        pd.to_datetime(value)
+        return "20 Done & Verified"
+    except:
+        pass
+
+    return "10 On Progress"
+
+df["Milestone Auto"] = df["Migration Actual"].apply(map_milestone)
+
+# =========================================================
+# UI/UX HEADER
+# =========================================================
+st.set_page_config(page_title="Dashboard IP Project", layout="wide")
+
 st.markdown("""
-<style>
-body {
-    background-color: #f5f7fa;
-}
-.sidebar .sidebar-content {
-    background-color: #ffffff;
-}
-.block-container {
-    padding-top: 1rem;
-}
-.card {
-    background: white;
-    padding: 15px 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    margin-bottom: 25px;
-}
-h1, h2, h3 {
-    font-weight: 700;
-}
-</style>
+    <h2 style='text-align:center; color:#4CAF50;'>📊 IP PROJECT DASHBOARD – CENTRAL JAVA</h2>
+    <hr>
 """, unsafe_allow_html=True)
 
-# =============================
-# LOAD FILE
-# =============================
-FILE_DEFAULT = "Update Progress IPRAN IPBB Central Java 25112025.xlsx"
+# =========================================================
+# FILTERS
+# =========================================================
+col1, col2, col3 = st.columns(3)
 
-uploaded = st.file_uploader("Upload Excel", type=["xlsx"])
-
-if uploaded:
-    df = pd.read_excel(uploaded, sheet_name="IPRAN")
-else:
-    st.info(f"Using default file in repo: {FILE_DEFAULT}")
-    df = pd.read_excel(FILE_DEFAULT, sheet_name="IPRAN")
-
-# =============================
-# CLEAN / DATE PARSING
-# =============================
-date_cols = ["Migration Plan", "Migration Actual", "Inbound Date", "Dismantle Date"]
-for c in date_cols:
-    df[c] = pd.to_datetime(df[c], errors="coerce")
-
-# Create Month column for migration timeline
-df["Plan_Month"] = df["Migration Plan"].dt.to_period("M").astype(str)
-
-# =============================
-# HEADER
-# =============================
-col1, col2 = st.columns([0.15, 0.85])
 with col1:
-    st.image(Image.open("adidas-logo.jpg"), width=90)
+    selected_witel = st.multiselect(
+        "Pilih Witel:",
+        sorted(df["WITEL"].unique()),
+        default=None
+    )
 
 with col2:
-    st.markdown("<h1>IPRAN Interactive Dashboard</h1>", unsafe_allow_html=True)
-    st.write("Last Update:", pd.Timestamp.today().strftime("%d %B %Y"))
+    selected_status = st.multiselect(
+        "Pilih Milestone:",
+        sorted(df["Milestone Auto"].unique()),
+        default=None
+    )
 
-st.markdown("### **A. Summary / Count**")
+with col3:
+    selected_odp = st.text_input("Cari ODP (optional):")
 
-# =============================
-# SUMMARY COUNT
-# =============================
-scope_list = ["Swap", "New", "Modernize", "Service Migration"]
+# Apply filters
+filtered_df = df.copy()
 
-col_a, col_b, col_c, col_d = st.columns(4)
-for (col, sc) in zip([col_a, col_b, col_c, col_d], scope_list):
-    with col:
-        count = df[df["Scope"] == sc].shape[0]
-        st.markdown(f"""
-        <div class="card">
-            <h3 style='color:#0055aa'>{sc}</h3>
-            <h2>{count}</h2>
-        </div>
-        """, unsafe_allow_html=True)
+if selected_witel:
+    filtered_df = filtered_df[filtered_df["WITEL"].isin(selected_witel)]
 
-# =============================
-# SECTION B — GRAFIK
-# =============================
-st.markdown("## **B. Grafik**")
+if selected_status:
+    filtered_df = filtered_df[filtered_df["Milestone Auto"].isin(selected_status)]
 
-# === 1. Bar Chart — Subcon Install / Migration ===
-bar_data = (
-    df.groupby("Subcon Install")["Uniq ID"]
-    .count()
-    .reset_index()
-    .rename(columns={"Uniq ID": "Count"})
+if selected_odp:
+    filtered_df = filtered_df[filtered_df["ODP NAME"].str.contains(selected_odp, case=False, na=False)]
+
+# =========================================================
+# KPI CARDS
+# =========================================================
+total = len(filtered_df)
+done = len(filtered_df[filtered_df["Milestone Auto"] == "20 Done & Verified"])
+progress = len(filtered_df[filtered_df["Milestone Auto"] == "10 On Progress"])
+not_started = len(filtered_df[filtered_df["Milestone Auto"] == "00 Not Started"])
+
+colA, colB, colC, colD = st.columns(4)
+
+colA.metric("Total Project", total)
+colB.metric("Completed", done)
+colC.metric("On Progress", progress)
+colD.metric("Not Started", not_started)
+
+# =========================================================
+# VISUALIZATION
+# =========================================================
+st.subheader("📈 Distribusi Milestone")
+
+fig = px.pie(
+    filtered_df,
+    names="Milestone Auto",
+    title="Milestone Distribution",
+    hole=0.5
 )
+st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("### **Bar Chart — Subcon Install & Migration**")
-fig_bar = px.bar(
-    bar_data, 
-    x="Subcon Install", 
-    y="Count",
-    color="Count",
-    title="Subcon Install Count",
-    template="simple_white"
+# =========================================================
+# TABEL DATA
+# =========================================================
+st.subheader("📋 Detail Data Project")
+st.dataframe(filtered_df, use_container_width=True)
+
+# =========================================================
+# DOWNLOAD BUTTON
+# =========================================================
+st.download_button(
+    label="Download Data (Filtered)",
+    data=filtered_df.to_csv(index=False).encode("utf-8"),
+    file_name="filtered_ip_project.csv",
+    mime="text/csv"
 )
-st.plotly_chart(fig_bar, use_container_width=True)
-
-# === 2. Pie Chart – Inbound, Dismantle, Migration Done ===
-pie_data = {
-    "Inbound": df["Inbound Date"].notna().sum(),
-    "Dismantle": df["Dismantle Date"].notna().sum(),
-    "Migration Done": df["Migration Actual"].notna().sum()
-}
-pie_df = pd.DataFrame({"Category": pie_data.keys(), "Count": pie_data.values()})
-
-st.markdown("### **Pie Chart — Inbound / Dismantle / Migration Done**")
-fig_pie = px.pie(
-    pie_df,
-    names="Category",
-    values="Count",
-    title="Inbound / Dismantle / Migration Done"
-)
-st.plotly_chart(fig_pie, use_container_width=True)
-
-# === 3. Timeline — Plan Migration ===
-st.markdown("### **Timeline — Migration Plan**")
-
-timeline_data = (
-    df["Plan_Month"]
-    .value_counts()
-    .reset_index()
-    .rename(columns={"index": "Month", "Plan_Month": "Count"})
-    .sort_values("Month")
-)
-
-fig_time = px.line(
-    timeline_data, 
-    x="Month", 
-    y="Count",
-    markers=True,
-    title="Migration Plan Timeline"
-)
-st.plotly_chart(fig_time, use_container_width=True)
-
-# === 4. Treemap Province → City → SOW ===
-st.markdown("### **Treemap — Province → City → SOW**")
-
-df_treemap = df.groupby(["Province", "City", "SOW"])["Uniq ID"].count().reset_index()
-
-fig_tree = px.treemap(
-    df_treemap,
-    path=["Province", "City", "SOW"],
-    values="Uniq ID",
-    title="Treemap: Province → City → SOW"
-)
-st.plotly_chart(fig_tree, use_container_width=True)
-
-# =============================
-# END
-# =============================
-st.success("Dashboard loaded successfully!")
