@@ -43,7 +43,6 @@ uploaded = st.file_uploader("Upload Excel", type=["xlsx"])
 if uploaded:
     df = pd.read_excel(uploaded, sheet_name="IPRAN")
 else:
-    st.info(f"Using default file in repo: {FILE_DEFAULT}")
     df = pd.read_excel(FILE_DEFAULT, sheet_name="IPRAN")
 
 # =============================
