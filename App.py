@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -67,7 +67,7 @@ with col2:
     st.markdown("<h1>IPRAN Interactive Dashboard</h1>", unsafe_allow_html=True)
     st.write("Last Update:", pd.Timestamp.today().strftime("%d %B %Y"))
 
-st.markdown("### **SOW SCOPE**")
+st.markdown("### **A. Summary / Count**")
 
 # =============================
 # SUMMARY COUNT — BASED ON Scope Update
@@ -84,7 +84,6 @@ for (col, sc) in zip([col_a, col_b, col_c, col_d], scope_list):
             <h2>{count}</h2>
         </div>
         """, unsafe_allow_html=True)
-
 
 # =============================
 # SECTION B — GRAFIK
